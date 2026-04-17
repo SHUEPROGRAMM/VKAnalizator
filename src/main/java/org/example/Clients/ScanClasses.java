@@ -8,12 +8,12 @@ import java.util.TreeSet;
 public class ScanClasses {
     public static abstract class ScanBase extends Thread {
         public final ArrayList<Integer> ids;
-        public final ArrayList<VKToken> vkTokens;
+        public final ArrayList<Integer> vkTokens;
         public final int rertyCount;
         public final long rertyTime;
         public long backTime = -99999999;
 
-        public ScanBase(ArrayList<Integer> ids, ArrayList<VKToken> vkTokens, int rertyCount, long rertyTime) {
+        public ScanBase(ArrayList<Integer> ids, ArrayList<Integer> vkTokens, int rertyCount, long rertyTime) {
             this.ids = ids;
             this.vkTokens = vkTokens;
             this.rertyTime = rertyTime;
@@ -22,7 +22,7 @@ public class ScanClasses {
 
         protected ArrayList<Integer> scanBase(ArrayList<Integer> data) { return null; }
 
-        protected void removeVKTokens(ArrayList<VKToken> data) {
+        protected void removeVKTokens(ArrayList<Integer> data) {
             if (data.isEmpty()) return;
             vkTokens.removeAll(data);
             General.vkTokens.remove(data);
@@ -107,7 +107,7 @@ public class ScanClasses {
         public final int level;
         public final ArrayList<Integer> newScan = new ArrayList<>();
 
-        public ScanLevel(ArrayList<Integer> ids, ArrayList<VKToken> vkTokens, int rertyCount, long rertyTime, int level) {
+        public ScanLevel(ArrayList<Integer> ids, ArrayList<Integer> vkTokens, int rertyCount, long rertyTime, int level) {
             super(ids, vkTokens, rertyCount, rertyTime);
             this.level = level;
         }
@@ -143,7 +143,7 @@ public class ScanClasses {
     }
 
     public static class ScanFriends extends ScanLevel {
-        public ScanFriends(ArrayList<Integer> ids, ArrayList<VKToken> vkTokens, int rertyCount, long rertyTime, int level) {
+        public ScanFriends(ArrayList<Integer> ids, ArrayList<Integer> vkTokens, int rertyCount, long rertyTime, int level) {
             super(ids, vkTokens, rertyCount, rertyTime, level);
         }
 
@@ -151,19 +151,25 @@ public class ScanClasses {
         protected void scanBaseDB(ScanBaseDB data) throws InterruptedException {
             ArrayList<Integer>[] buffer = getDivide(data.nonScan, vkTokens.size());
             ScanThreads.FriendsGetThread[] friendsGetThreads = new ScanThreads.FriendsGetThread[buffer.length];
-            ArrayList<VKToken> remove = new ArrayList<>();
+            ArrayList<Integer> remove = new ArrayList<>();
             data.nonScan.clear();
 
-            for (int index = 0; index < friendsGetThreads.length; ++index) {
-                friendsGetThreads[index] = new ScanThreads.FriendsGetThread(vkTokens.get(index), buffer[index]);
-                friendsGetThreads[index].start();
+            synchronized (General.vkTokens) {
+                for (int index = 0; index < friendsGetThreads.length; ++index) {
+                    VKToken vkToken = General.vkTokens.data.get(vkTokens.get(index));
+                    if (vkToken != null) {
+                        friendsGetThreads[index] = new ScanThreads.FriendsGetThread(vkToken, buffer[index]);
+                        friendsGetThreads[index].start();
+                    } else friendsGetThreads[index].error = true;
+                }
             }
+
 
             for (ScanThreads.FriendsGetThread element : friendsGetThreads) {
                 element.join();
                 if (element.error) {
                     data.nonScan.addAll(element.ids);
-                    remove.add(element.vkToken);
+                    remove.add(element.vkToken.id);
                 } data.newScan.addAll(element.newScan);
             } removeVKTokens(remove);
         }

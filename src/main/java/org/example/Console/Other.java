@@ -284,11 +284,6 @@ public class Other {
             if (equals) {
                 map.put(name, data);
                 backCopy = true;
-            } else if (valueType != 2) {
-                if (!backCopy) {
-                    data = data.copy();
-                    backCopy = true;
-                } else backCopy = false;
             }
 
             switch (General.input.strings.get(General.input.index)) {
@@ -315,431 +310,483 @@ public class Other {
                         }
                     }
                 }
-                case "filter" -> {
-                    if (General.input.strings.size() - General.input.index < 3) {
-                        System.out.println("Error not command of filter");
-                        return false;
-                    }
-
-                    switch (General.input.strings.get(++General.input.index)) {
-                        case "online" -> {
-                            if (data instanceof Users users) {
-                                if (General.input.strings.size() - General.input.index < 1) {
-                                    System.out.println("error online not yes or no");
-                                    return false;
-                                }
-
-                                switch (General.input.strings.get(++General.input.index)) {
-                                    case "yes" -> {
-                                        if (twoDate.range()) users.filterOnline(true, twoDate.one, twoDate.two);
-                                        else users.filterOnline(twoDate.one);
-                                    }
-                                    case "no" -> {
-                                        if (twoDate.range()) users.filterOnline(false, twoDate.one, twoDate.two);
-                                        else users.filterNoOnline(twoDate.one);
-                                    }
-                                    default -> {
-                                        System.out.println("Error online type: " + General.input.strings.get(General.input.index));
-                                        return false;
-                                    }
-                                }
-                            } else {
-                                System.out.println("Error online is not users");
-                                return false;
-                            }
-                        }
-                        case "bdate" -> {
-                            if (data instanceof Users users) {
-                                if (General.input.strings.get(++General.input.index).equals("range")) {
-                                    if (General.input.strings.size() - General.input.index > 3) {
-                                        if (Utils.isBDate(General.input.strings.get(++General.input.index)) && Utils.isBDate(General.input.strings.get(General.input.index + 1))) {
-                                            int one = Utils.addBDate(General.input.strings.get(General.input.index));
-                                            int two = Utils.addBDate(General.input.strings.get(++General.input.index));
-
-                                            if (Utils.isCorrectBDateRange(one, two)) {
-                                                if (!twoDate.range()) {
-                                                    if (twoDate.isDate()) users.filterBDate(one, two, twoDate.one);
-                                                    else users.filterBDate(one, two);
-                                                } else users.filterBDate(one, two, twoDate.one, twoDate.two);
-                                            } else {
-                                                System.out.println(Colors.ANSI_RED + "Error not correct bDate range" + Colors.ANSI_RESET);
-                                                return false;
-                                            }
-                                        } else {
-                                            System.out.println(Colors.ANSI_RED + "Error bDate range format" + Colors.ANSI_RESET);
-                                            return false;
-                                        }
-                                    } else {
-                                        System.out.println(Colors.ANSI_RED + "Error not bDate range" + Colors.ANSI_RESET);
-                                        return false;
-                                    }
-                                } else {
-                                    if (!Utils.isBDate(General.input.strings.get(General.input.index))) return false;
-                                    int bdate = Utils.addBDate(General.input.strings.get(General.input.index));
-                                    users.filterId(UserIDEnum.BDATE.ordinal(), bdate, twoDate.one);
-                                }
-                            } else {
-                                System.out.println("Error syntax bdate");
-                                return false;
-                            }
-                        }
-                        case "name" -> {
-                            if (data instanceof Users users) {
-                                ++General.input.index;
-                                int percent = General.input.getPercent();
-                                if (percent < 0) return false;
-
-                                int type = switch (General.input.strings.get(General.input.index)) {
-                                    case "first" -> UserIDEnum.FIRST_NAME.ordinal();
-                                    case "last" -> UserIDEnum.LAST_NAME.ordinal();
-                                    case "nick" -> UserIDEnum.NICK_NAME.ordinal();
-                                    case "status" -> UserIDEnum.STATUS.ordinal();
-                                    case "domain" -> UserIDEnum.DOMAIN.ordinal();
-                                    default -> -1;
-                                };
-
-                                if (type == -1) {
-                                    System.out.println(Colors.ANSI_RED + "Error not name: " + General.input.strings.get(General.input.index) + Colors.ANSI_RESET);
-                                    return false;
-                                } ++General.input.index;
-
-                                ArrayList<String> strings = General.input.getStrings();
-                                if (strings == null) return false;
-                                if (twoDate.range()) {
-                                    if (percent == 100) users.filterName(strings, type, twoDate.one, twoDate.two);
-                                    else users.filterName(strings, type, twoDate.one, twoDate.two, percent, General.threadCount);
-                                } else users.filterName(type, strings, percent, twoDate.one, General.threadCount);
-                                --General.input.index;
-                            }
-                        }
-                        case "names" -> {
-                            if (data instanceof Users users) {
-                                ++General.input.index;
-                                int percent = General.input.getPercent();
-
-                                ArrayList<Input.Names> buffer = General.input.getNames();
-                                if (buffer == null) return false;
-                                if (twoDate.range()) {
-                                    if (percent == 100) users.filterNames(buffer, twoDate.one, twoDate.two);
-                                    else users.filterNames(buffer, twoDate.one, twoDate.two, percent, General.threadCount);
-                                } else users.filterNames(buffer, percent, twoDate.one, General.threadCount);
-                                --General.input.index;
-                            }
-                        }
-                        case "id" -> {
-                            if (data instanceof Users users) {
-                                int id = Integer.parseInt(General.input.strings.get(General.input.index + 2));
-                                switch (General.input.strings.get(General.input.index + 1)) {
-                                    case "city" -> {
-                                        if (twoDate.range()) users.filterId(id, UserIDEnum.CITY.ordinal(), twoDate.one, twoDate.two);
-                                        else users.filterId(UserIDEnum.CITY.ordinal(), id, twoDate.one);
-                                    }
-                                    case "sex" -> {
-                                        if (twoDate.range()) users.filterId(id, UserIDEnum.SEX.ordinal(), twoDate.one, twoDate.two);
-                                        else users.filterId(UserIDEnum.SEX.ordinal(), id, twoDate.one);
-                                    }
-                                    case "type" -> {
-                                        if (twoDate.range()) users.filterId(id, UserIDEnum.TYPE.ordinal(), twoDate.one, twoDate.two);
-                                        else users.filterId(UserIDEnum.TYPE.ordinal(), id, twoDate.one);
-                                    }
-                                    default -> {
-                                        System.out.println("Error not filter in: " + General.input.strings.get(General.input.index + 1));
-                                        return false;
-                                    }
-                                } General.input.index += 2;
-                            }
-
-                        }
-                        case "idGenerate" -> {
-                            if (data instanceof Users users) {
-                                ++General.input.index;
-                                Input.GenerateAndLevel generateAndLevel = General.input.getGenerateAndLevel();
-                                if (generateAndLevel == null) return false;
-
-                                int id;
-                                try {
-                                    id = Integer.parseInt(General.input.strings.get(General.input.index + 1));
-                                } catch (NumberFormatException e) {
-                                    System.out.println("Error unconvert id: " + General.input.strings.get(General.input.index + 1));
-                                    return false;
-                                }
-
-                                switch (General.input.strings.get(General.input.index)) {
-                                    case "city" -> { users.filterIdGenerate(UserIDEnum.CITY.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
-                                    case "type" -> { users.filterIdGenerate(UserIDEnum.TYPE.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
-                                    case "sex" -> { { users.filterIdGenerate(UserIDEnum.SEX.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); } }
-                                    default -> {
-                                        System.out.println("Error is generate command: " + General.input.strings.get(General.input.index));
-                                        return false;
-                                    }
-                                } ++General.input.index;
-                            } else {
-                                System.out.println("Error io element is not users");
-                                return false;
-                            }
-                        }
-                    }
-                }
-                case "remove" -> {
-                    if (General.input.strings.size() - General.input.index < 3) {
-                        System.out.println("Error not command of filter");
-                        return false;
-                    }
-
-                    switch (General.input.strings.get(++General.input.index)) {
-                        case "online" -> {
-                            if (data instanceof Users users) {
-                                if (General.input.strings.size() - General.input.index < 1) {
-                                    System.out.println("error online not yes or no");
-                                    return false;
-                                }
-
-                                switch (General.input.strings.get(++General.input.index)) {
-                                    case "yes" -> {
-                                        if (twoDate.range()) users.removeOnline(true, twoDate.one, twoDate.two);
-                                        else users.removeOnline(twoDate.one);
-                                    }
-                                    case "no" -> {
-                                        if (twoDate.range()) users.removeOnline(false, twoDate.one, twoDate.two);
-                                        else users.removeNoOnline(twoDate.one);
-                                    }
-                                    default -> {
-                                        System.out.println("Error online type: " + General.input.strings.get(General.input.index));
-                                        return false;
-                                    }
-                                }
-                            } else {
-                                System.out.println("Error online is not users");
-                                return false;
-                            }
-                        }
-                        case "bdate" -> {
-                            if (data instanceof Users users) {
-                                if (General.input.strings.get(++General.input.index).equals("range")) {
-                                    if (General.input.strings.size() - General.input.index > 3) {
-                                        if (Utils.isBDate(General.input.strings.get(++General.input.index)) && Utils.isBDate(General.input.strings.get(General.input.index + 1))) {
-                                            int one = Utils.addBDate(General.input.strings.get(General.input.index));
-                                            int two = Utils.addBDate(General.input.strings.get(++General.input.index));
-
-                                            if (Utils.isCorrectBDateRange(one, two)) {
-                                                if (!twoDate.range()) {
-                                                    if (twoDate.isDate()) users.removeBDate(one, two, twoDate.one);
-                                                    else users.removeBDate(one, two);
-                                                } else users.removeBDate(one, two, twoDate.one, twoDate.two);
-                                            } else {
-                                                System.out.println(Colors.ANSI_RED + "Error not correct bDate range" + Colors.ANSI_RESET);
-                                                return false;
-                                            }
-                                        } else {
-                                            System.out.println(Colors.ANSI_RED + "Error bDate range format" + Colors.ANSI_RESET);
-                                            return false;
-                                        }
-                                    } else {
-                                        System.out.println(Colors.ANSI_RED + "Error not bDate range" + Colors.ANSI_RESET);
-                                        return false;
-                                    }
-                                } else {
-                                    if (!Utils.isBDate(General.input.strings.get(General.input.index))) return false;
-                                    int bdate = Utils.addBDate(General.input.strings.get(General.input.index));
-                                    users.filterIdRemove(UserIDEnum.BDATE.ordinal(), bdate, twoDate.one);
-                                }
-                            } else {
-                                System.out.println("Error syntax bdate");
-                                return false;
-                            }
-                        }
-                        case "name" -> {
-                            if (data instanceof Users users) {
-                                ++General.input.index;
-                                int percent = General.input.getPercent();
-                                if (percent < 0) return false;
-
-                                int type = switch (General.input.strings.get(General.input.index)) {
-                                    case "first" -> UserIDEnum.FIRST_NAME.ordinal();
-                                    case "last" -> UserIDEnum.LAST_NAME.ordinal();
-                                    case "nick" -> UserIDEnum.NICK_NAME.ordinal();
-                                    case "status" -> UserIDEnum.STATUS.ordinal();
-                                    case "domain" -> UserIDEnum.DOMAIN.ordinal();
-                                    default -> -1;
-                                };
-
-                                if (type == -1) {
-                                    System.out.println("Error not name: " + General.input.strings.get(General.input.index));
-                                    return false;
-                                } ++General.input.index;
-
-                                ArrayList<String> strings = General.input.getStrings();
-                                if (strings == null) return false;
-                                if (twoDate.range()) {
-                                    if (percent == 100) users.filterName(strings, type, twoDate.one, twoDate.two);
-                                    else users.filterName(strings, type, twoDate.one, twoDate.two, percent, General.threadCount);
-                                } else users.filterName(type, strings, percent, twoDate.one, General.threadCount);
-                                --General.input.index;
-                            }
-                        }
-                        case "names" -> {
-                            if (data instanceof Users users) {
-                                ++General.input.index;
-                                int percent = General.input.getPercent();
-                                if (percent < 0) return false;
-
-                                ArrayList<Input.Names> buffer = General.input.getNames();
-                                if (buffer == null) return false;
-                                if (twoDate.range()) {
-                                    if (percent == 100) users.removeNames(buffer, twoDate.one, twoDate.two);
-                                    else users.removeNames(buffer, twoDate.one, twoDate.two, percent, General.threadCount);
-                                } else users.removeNames(buffer, percent, twoDate.one, General.threadCount);
-                                --General.input.index;
-                            }
-                        }
-                        case "id" -> {
-                            if (data instanceof Users users) {
-                                int id = Integer.parseInt(General.input.strings.get(General.input.index + 2));
-                                switch (General.input.strings.get(General.input.index + 1)) {
-                                    case "city" -> {
-                                        if (twoDate.range()) users.removeId(id, UserIDEnum.CITY.ordinal(), twoDate.one, twoDate.two);
-                                        else users.filterIdRemove(UserIDEnum.CITY.ordinal(), id, twoDate.one);
-                                    }
-                                    case "sex" -> {
-                                        if (twoDate.range()) users.removeId(id, UserIDEnum.SEX.ordinal(), twoDate.one, twoDate.two);
-                                        else users.filterIdRemove(UserIDEnum.SEX.ordinal(), id, twoDate.one);
-                                    }
-                                    case "type" -> {
-                                        if (twoDate.range()) users.removeId(id, UserIDEnum.TYPE.ordinal(), twoDate.one, twoDate.two);
-                                        else users.filterIdRemove(UserIDEnum.TYPE.ordinal(), id, twoDate.one);
-                                    }
-                                    default -> {
-                                        System.out.println("Error not filter in: " + General.input.strings.get(General.input.index + 1));
-                                        return false;
-                                    }
-                                } General.input.index += 2;
-                            }
-
-                        }
-                        case "idGenerate" -> {
-                            if (data instanceof Users users) {
-                                ++General.input.index;
-                                Input.GenerateAndLevel generateAndLevel = General.input.getGenerateAndLevel();
-                                if (generateAndLevel == null) return false;
-
-                                int id;
-                                try {
-                                    id = Integer.parseInt(General.input.strings.get(General.input.index + 1));
-                                } catch (NumberFormatException e) {
-                                    System.out.println("Error unconvert id: " + General.input.strings.get(General.input.index + 1));
-                                    return false;
-                                }
-
-                                switch (General.input.strings.get(General.input.index)) {
-                                    case "city" -> { users.removeIdGenerate(UserIDEnum.CITY.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
-                                    case "type" -> { users.removeIdGenerate(UserIDEnum.TYPE.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
-                                    case "sex" -> { { users.removeIdGenerate(UserIDEnum.SEX.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); } }
-                                    default -> {
-                                        System.out.println(Colors.ANSI_RED + "Error is generate command: " + General.input.strings.get(General.input.index) + Colors.ANSI_RESET);
-                                        return false;
-                                    }
-                                } ++General.input.index;
-                            } else {
-                                System.out.println(Colors.ANSI_RED + "Error io element is not users" + Colors.ANSI_RESET);
-                                return false;
-                            }
-                        }
-                    }
-                }
-                case "chain" -> {
-                    if (data instanceof Users users) {
-                        ++General.input.index;
-                        ArrayList<Chains.Base> chains = new ArrayList<>();
-
-                        while (General.input.strings.size() - General.input.index > 2) {
-                            Boolean generate = General.input.getGenerate();
-                            if (generate == null) return false;
-                            ArrayList<Integer> in;
-                            ArrayList<Integer> to;
-
-                            if (Utils.isInteger(General.input.strings.get(General.input.index))) {
-                                in = General.input.getIntegers();
-                                if (in == null) return false;
-                            } else {
-                                String nameIn = General.input.strings.get(General.input.index);
-                                Node node = getBase(true);
-                                if (node == null || !(node.data instanceof Users)) {
-                                    System.out.println("Error not value or value is not users in chain in: " + nameIn);
-                                    return false;
-                                } in = new ArrayList<>(node.data.data);
-                            }
-
-                            if (!General.input.strings.get(General.input.index).equals("to")) {
-                                System.out.println("Error not to in chain");
-                                return false;
-                            } ++General.input.index;
-
-                            if (Utils.isInteger(General.input.strings.get(General.input.index))) {
-                                to = General.input.getIntegers();
-                                if (to == null) return false;
-                            } else {
-                                String nameTo = General.input.strings.get(General.input.index);
-                                Node node = getBase(true);
-                                if (node == null || !(node.data instanceof Users)) {
-                                    System.out.println("Error not value or value is not users in chain to: " + nameTo);
-                                    return false;
-                                } to = new ArrayList<>(node.data.data);
-                            }
-
-                            TreeSet<Integer> set = new TreeSet<>(in);
-                            set.addAll(to);
-
-                            if (set.size() < in.size() + to.size()) {
-                                System.out.println("Error in and to equals elements");
-                                return false;
-                            }
-
-                            Chains.Base chain = ((generate) ? new Chains.ChainGenerateUsers(in, to, twoDate.one, data.data) : new Chains.ChainUsers(in, to, twoDate.one, data.data));
-                            chains.add(chain);
-                            chain.start();
-
-                            if (General.input.strings.size() - General.input.index > 0 && General.input.strings.get(General.input.index).equals(",")) ++General.input.index;
-                            else break;
-                        }
-
-                        for (Chains.Base element : chains)
-                            element.join();
-
-                        chains.removeIf(s -> s.data == null);
-                        data = new org.example.DB.Chains(chains);
-                        if (equals) {
-                            map.put(name, data);
+                default -> {
+                    if (!equals && valueType != 2) {
+                        if (!backCopy) {
+                            data = data.copy();
                             backCopy = true;
-                        } --General.input.index;
-                    } else {
-                        System.out.println("Error data not users");
-                        return false;
+                        } else backCopy = false;
                     }
-                }
-                case "general" -> {
-                    ++General.input.index;
-                    Boolean generate = General.input.getGenerate();
-                    if (generate == null) return false;
 
-                    if (data instanceof Users users) {
+                    if (General.input.strings.get(General.input.index).equals("chain")) {
+                        if (data instanceof Users users) {
+                            ++General.input.index;
+                            ArrayList<Chains.Base> chains = new ArrayList<>();
+
+                            while (General.input.strings.size() - General.input.index > 2) {
+                                Boolean generate = General.input.getGenerate();
+                                if (generate == null) return false;
+                                ArrayList<Integer> in;
+                                ArrayList<Integer> to;
+
+                                if (Utils.isInteger(General.input.strings.get(General.input.index))) {
+                                    in = General.input.getIntegers();
+                                    if (in == null) return false;
+                                } else {
+                                    String nameIn = General.input.strings.get(General.input.index);
+                                    Node node = getBase(true);
+                                    if (node == null || !(node.data instanceof Users)) {
+                                        System.out.println("Error not value or value is not users in chain in: " + nameIn);
+                                        return false;
+                                    } in = new ArrayList<>(node.data.data);
+                                }
+
+                                if (!General.input.strings.get(General.input.index).equals("to")) {
+                                    System.out.println("Error not to in chain");
+                                    return false;
+                                } ++General.input.index;
+
+                                if (Utils.isInteger(General.input.strings.get(General.input.index))) {
+                                    to = General.input.getIntegers();
+                                    if (to == null) return false;
+                                } else {
+                                    String nameTo = General.input.strings.get(General.input.index);
+                                    Node node = getBase(true);
+                                    if (node == null || !(node.data instanceof Users)) {
+                                        System.out.println("Error not value or value is not users in chain to: " + nameTo);
+                                        return false;
+                                    } to = new ArrayList<>(node.data.data);
+                                }
+
+                                TreeSet<Integer> set = new TreeSet<>(in);
+                                set.addAll(to);
+
+                                if (set.size() < in.size() + to.size()) {
+                                    System.out.println("Error in and to equals elements");
+                                    return false;
+                                }
+
+                                Chains.Base chain = ((generate) ? new Chains.ChainGenerateUsers(in, to, twoDate.one, data.data) : new Chains.ChainUsers(in, to, twoDate.one, data.data));
+                                chains.add(chain);
+                                chain.start();
+
+                                if (General.input.strings.size() - General.input.index > 0 && General.input.strings.get(General.input.index).equals(",")) ++General.input.index;
+                                else break;
+                            }
+
+                            for (Chains.Base element : chains)
+                                element.join();
+
+                            chains.removeIf(s -> s.data == null);
+                            data = new org.example.DB.Chains(chains);
+                            if (equals) {
+                                map.put(name, data);
+                                backCopy = true;
+                            } --General.input.index;
+                        } else {
+                            System.out.println("Error data not users");
+                            return false;
+                        }
+                    } else {
+                        if (!equals && valueType != 2) {
+                            if (!backCopy) {
+                                data = data.copy();
+                                backCopy = true;
+                            } else backCopy = false;
+                        }
+
                         switch (General.input.strings.get(General.input.index)) {
-                            case "friends" -> { users.generalIds(GenerateIDsEnum.FRIENDS.ordinal(), UserIDsEnum.FRIENDS.ordinal(), generate, twoDate.one); }
-                            case "subscribers" -> { users.generalIds(GenerateIDsEnum.SUBSCRIBERS.ordinal(), UserIDsEnum.SUBSCRIBERS.ordinal(), generate, twoDate.one); }
-                            case "groups" -> {
-                                users.generalIds(GenerateIDsEnum.GROUPS.ordinal(), UserIDsEnum.GROUPS.ordinal(), generate, twoDate.one);
-                                data = new Groups(users.data);
-                                if (equals) { map.put(name, data); }
+                            case "probability" -> {
+                                if (data instanceof Users users) {
+                                    ++General.input.index;
+                                    Input.Probability probability = General.input.getProbability();
+                                    if (probability == null) return false;
+
+                                    if (General.input.strings.size() - General.input.index > 1) {
+                                        switch (General.input.strings.get(General.input.index)) {
+                                            case "friends" -> { users.filterProbabilityIds(GenerateIDsEnum.FRIENDS.ordinal(), GenerateIDsEnum.FRIENDS.ordinal(), probability.percent(), General.threadCount); }
+                                            case "groups" -> {  }
+                                            case "subscribers" -> {  }
+                                            default -> {
+                                                System.out.println(Colors.ANSI_RED + "Error not probability argument: " + General.input.strings.get(General.input.index) + Colors.ANSI_RESET);
+                                                return false;
+                                            }
+                                        }
+                                    } else {
+                                        System.out.println(Colors.ANSI_RED + "Error not probability argument" + Colors.ANSI_RESET);
+                                        return false;
+                                    }
+                                } else {
+                                    System.out.println(Colors.ANSI_RED + "Error not probability no user data" + Colors.ANSI_RESET);
+                                    return false;
+                                }
+                            }
+                            case "filter" -> {
+                                if (General.input.strings.size() - General.input.index < 3) {
+                                    System.out.println("Error not command of filter");
+                                    return false;
+                                }
+
+                                switch (General.input.strings.get(++General.input.index)) {
+                                    case "online" -> {
+                                        if (data instanceof Users users) {
+                                            if (General.input.strings.size() - General.input.index < 1) {
+                                                System.out.println("error online not yes or no");
+                                                return false;
+                                            }
+
+                                            switch (General.input.strings.get(++General.input.index)) {
+                                                case "yes" -> {
+                                                    if (twoDate.range()) users.filterOnline(true, twoDate.one, twoDate.two);
+                                                    else users.filterOnline(twoDate.one);
+                                                }
+                                                case "no" -> {
+                                                    if (twoDate.range()) users.filterOnline(false, twoDate.one, twoDate.two);
+                                                    else users.filterNoOnline(twoDate.one);
+                                                }
+                                                default -> {
+                                                    System.out.println("Error online type: " + General.input.strings.get(General.input.index));
+                                                    return false;
+                                                }
+                                            }
+                                        } else {
+                                            System.out.println("Error online is not users");
+                                            return false;
+                                        }
+                                    }
+                                    case "bdate" -> {
+                                        if (data instanceof Users users) {
+                                            if (General.input.strings.get(++General.input.index).equals("range")) {
+                                                if (General.input.strings.size() - General.input.index > 3) {
+                                                    if (Utils.isBDate(General.input.strings.get(++General.input.index)) && Utils.isBDate(General.input.strings.get(General.input.index + 1))) {
+                                                        int one = Utils.addBDate(General.input.strings.get(General.input.index));
+                                                        int two = Utils.addBDate(General.input.strings.get(++General.input.index));
+
+                                                        if (Utils.isCorrectBDateRange(one, two)) {
+                                                            if (!twoDate.range()) {
+                                                                if (twoDate.isDate()) users.filterBDate(one, two, twoDate.one);
+                                                                else users.filterBDate(one, two);
+                                                            } else users.filterBDate(one, two, twoDate.one, twoDate.two);
+                                                        } else {
+                                                            System.out.println(Colors.ANSI_RED + "Error not correct bDate range" + Colors.ANSI_RESET);
+                                                            return false;
+                                                        }
+                                                    } else {
+                                                        System.out.println(Colors.ANSI_RED + "Error bDate range format" + Colors.ANSI_RESET);
+                                                        return false;
+                                                    }
+                                                } else {
+                                                    System.out.println(Colors.ANSI_RED + "Error not bDate range" + Colors.ANSI_RESET);
+                                                    return false;
+                                                }
+                                            } else {
+                                                if (!Utils.isBDate(General.input.strings.get(General.input.index))) return false;
+                                                int bdate = Utils.addBDate(General.input.strings.get(General.input.index));
+                                                users.filterId(UserIDEnum.BDATE.ordinal(), bdate, twoDate.one);
+                                            }
+                                        } else {
+                                            System.out.println("Error syntax bdate");
+                                            return false;
+                                        }
+                                    }
+                                    case "name" -> {
+                                        if (data instanceof Users users) {
+                                            ++General.input.index;
+                                            int percent = General.input.getPercent();
+                                            if (percent < 0) return false;
+
+                                            int type = switch (General.input.strings.get(General.input.index)) {
+                                                case "first" -> UserIDEnum.FIRST_NAME.ordinal();
+                                                case "last" -> UserIDEnum.LAST_NAME.ordinal();
+                                                case "nick" -> UserIDEnum.NICK_NAME.ordinal();
+                                                case "status" -> UserIDEnum.STATUS.ordinal();
+                                                case "domain" -> UserIDEnum.DOMAIN.ordinal();
+                                                default -> -1;
+                                            };
+
+                                            if (type == -1) {
+                                                System.out.println(Colors.ANSI_RED + "Error not name: " + General.input.strings.get(General.input.index) + Colors.ANSI_RESET);
+                                                return false;
+                                            } ++General.input.index;
+
+                                            ArrayList<String> strings = General.input.getStrings();
+                                            if (strings == null) return false;
+                                            if (twoDate.range()) {
+                                                if (percent == 100) users.filterName(strings, type, twoDate.one, twoDate.two);
+                                                else users.filterName(strings, type, twoDate.one, twoDate.two, percent, General.threadCount);
+                                            } else users.filterName(type, strings, percent, twoDate.one, General.threadCount);
+                                            --General.input.index;
+                                        }
+                                    }
+                                    case "names" -> {
+                                        if (data instanceof Users users) {
+                                            ++General.input.index;
+                                            int percent = General.input.getPercent();
+
+                                            ArrayList<Input.Names> buffer = General.input.getNames();
+                                            if (buffer == null) return false;
+                                            if (twoDate.range()) {
+                                                if (percent == 100) users.filterNames(buffer, twoDate.one, twoDate.two);
+                                                else users.filterNames(buffer, twoDate.one, twoDate.two, percent, General.threadCount);
+                                            } else users.filterNames(buffer, percent, twoDate.one, General.threadCount);
+                                            --General.input.index;
+                                        }
+                                    }
+                                    case "id" -> {
+                                        if (data instanceof Users users) {
+                                            int id = Integer.parseInt(General.input.strings.get(General.input.index + 2));
+                                            switch (General.input.strings.get(General.input.index + 1)) {
+                                                case "city" -> {
+                                                    if (twoDate.range()) users.filterId(id, UserIDEnum.CITY.ordinal(), twoDate.one, twoDate.two);
+                                                    else users.filterId(UserIDEnum.CITY.ordinal(), id, twoDate.one);
+                                                }
+                                                case "sex" -> {
+                                                    if (twoDate.range()) users.filterId(id, UserIDEnum.SEX.ordinal(), twoDate.one, twoDate.two);
+                                                    else users.filterId(UserIDEnum.SEX.ordinal(), id, twoDate.one);
+                                                }
+                                                case "type" -> {
+                                                    if (twoDate.range()) users.filterId(id, UserIDEnum.TYPE.ordinal(), twoDate.one, twoDate.two);
+                                                    else users.filterId(UserIDEnum.TYPE.ordinal(), id, twoDate.one);
+                                                }
+                                                default -> {
+                                                    System.out.println("Error not filter in: " + General.input.strings.get(General.input.index + 1));
+                                                    return false;
+                                                }
+                                            } General.input.index += 2;
+                                        }
+
+                                    }
+                                    case "idGenerate" -> {
+                                        if (data instanceof Users users) {
+                                            ++General.input.index;
+                                            Input.GenerateAndLevel generateAndLevel = General.input.getGenerateAndLevel();
+                                            if (generateAndLevel == null) return false;
+
+                                            int id;
+                                            try {
+                                                id = Integer.parseInt(General.input.strings.get(General.input.index + 1));
+                                            } catch (NumberFormatException e) {
+                                                System.out.println("Error unconvert id: " + General.input.strings.get(General.input.index + 1));
+                                                return false;
+                                            }
+
+                                            switch (General.input.strings.get(General.input.index)) {
+                                                case "city" -> { users.filterIdGenerate(UserIDEnum.CITY.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
+                                                case "type" -> { users.filterIdGenerate(UserIDEnum.TYPE.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
+                                                case "sex" -> { { users.filterIdGenerate(UserIDEnum.SEX.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); } }
+                                                default -> {
+                                                    System.out.println("Error is generate command: " + General.input.strings.get(General.input.index));
+                                                    return false;
+                                                }
+                                            } ++General.input.index;
+                                        } else {
+                                            System.out.println("Error io element is not users");
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                            case "remove" -> {
+                                if (General.input.strings.size() - General.input.index < 3) {
+                                    System.out.println("Error not command of filter");
+                                    return false;
+                                }
+
+                                switch (General.input.strings.get(++General.input.index)) {
+                                    case "online" -> {
+                                        if (data instanceof Users users) {
+                                            if (General.input.strings.size() - General.input.index < 1) {
+                                                System.out.println("error online not yes or no");
+                                                return false;
+                                            }
+
+                                            switch (General.input.strings.get(++General.input.index)) {
+                                                case "yes" -> {
+                                                    if (twoDate.range()) users.removeOnline(true, twoDate.one, twoDate.two);
+                                                    else users.removeOnline(twoDate.one);
+                                                }
+                                                case "no" -> {
+                                                    if (twoDate.range()) users.removeOnline(false, twoDate.one, twoDate.two);
+                                                    else users.removeNoOnline(twoDate.one);
+                                                }
+                                                default -> {
+                                                    System.out.println("Error online type: " + General.input.strings.get(General.input.index));
+                                                    return false;
+                                                }
+                                            }
+                                        } else {
+                                            System.out.println("Error online is not users");
+                                            return false;
+                                        }
+                                    }
+                                    case "bdate" -> {
+                                        if (data instanceof Users users) {
+                                            if (General.input.strings.get(++General.input.index).equals("range")) {
+                                                if (General.input.strings.size() - General.input.index > 3) {
+                                                    if (Utils.isBDate(General.input.strings.get(++General.input.index)) && Utils.isBDate(General.input.strings.get(General.input.index + 1))) {
+                                                        int one = Utils.addBDate(General.input.strings.get(General.input.index));
+                                                        int two = Utils.addBDate(General.input.strings.get(++General.input.index));
+
+                                                        if (Utils.isCorrectBDateRange(one, two)) {
+                                                            if (!twoDate.range()) {
+                                                                if (twoDate.isDate()) users.removeBDate(one, two, twoDate.one);
+                                                                else users.removeBDate(one, two);
+                                                            } else users.removeBDate(one, two, twoDate.one, twoDate.two);
+                                                        } else {
+                                                            System.out.println(Colors.ANSI_RED + "Error not correct bDate range" + Colors.ANSI_RESET);
+                                                            return false;
+                                                        }
+                                                    } else {
+                                                        System.out.println(Colors.ANSI_RED + "Error bDate range format" + Colors.ANSI_RESET);
+                                                        return false;
+                                                    }
+                                                } else {
+                                                    System.out.println(Colors.ANSI_RED + "Error not bDate range" + Colors.ANSI_RESET);
+                                                    return false;
+                                                }
+                                            } else {
+                                                if (!Utils.isBDate(General.input.strings.get(General.input.index))) return false;
+                                                int bdate = Utils.addBDate(General.input.strings.get(General.input.index));
+                                                users.filterIdRemove(UserIDEnum.BDATE.ordinal(), bdate, twoDate.one);
+                                            }
+                                        } else {
+                                            System.out.println("Error syntax bdate");
+                                            return false;
+                                        }
+                                    }
+                                    case "name" -> {
+                                        if (data instanceof Users users) {
+                                            ++General.input.index;
+                                            int percent = General.input.getPercent();
+                                            if (percent < 0) return false;
+
+                                            int type = switch (General.input.strings.get(General.input.index)) {
+                                                case "first" -> UserIDEnum.FIRST_NAME.ordinal();
+                                                case "last" -> UserIDEnum.LAST_NAME.ordinal();
+                                                case "nick" -> UserIDEnum.NICK_NAME.ordinal();
+                                                case "status" -> UserIDEnum.STATUS.ordinal();
+                                                case "domain" -> UserIDEnum.DOMAIN.ordinal();
+                                                default -> -1;
+                                            };
+
+                                            if (type == -1) {
+                                                System.out.println("Error not name: " + General.input.strings.get(General.input.index));
+                                                return false;
+                                            } ++General.input.index;
+
+                                            ArrayList<String> strings = General.input.getStrings();
+                                            if (strings == null) return false;
+                                            if (twoDate.range()) {
+                                                if (percent == 100) users.filterName(strings, type, twoDate.one, twoDate.two);
+                                                else users.filterName(strings, type, twoDate.one, twoDate.two, percent, General.threadCount);
+                                            } else users.filterName(type, strings, percent, twoDate.one, General.threadCount);
+                                            --General.input.index;
+                                        }
+                                    }
+                                    case "names" -> {
+                                        if (data instanceof Users users) {
+                                            ++General.input.index;
+                                            int percent = General.input.getPercent();
+                                            if (percent < 0) return false;
+
+                                            ArrayList<Input.Names> buffer = General.input.getNames();
+                                            if (buffer == null) return false;
+                                            if (twoDate.range()) {
+                                                if (percent == 100) users.removeNames(buffer, twoDate.one, twoDate.two);
+                                                else users.removeNames(buffer, twoDate.one, twoDate.two, percent, General.threadCount);
+                                            } else users.removeNames(buffer, percent, twoDate.one, General.threadCount);
+                                            --General.input.index;
+                                        }
+                                    }
+                                    case "id" -> {
+                                        if (data instanceof Users users) {
+                                            int id = Integer.parseInt(General.input.strings.get(General.input.index + 2));
+                                            switch (General.input.strings.get(General.input.index + 1)) {
+                                                case "city" -> {
+                                                    if (twoDate.range()) users.removeId(id, UserIDEnum.CITY.ordinal(), twoDate.one, twoDate.two);
+                                                    else users.filterIdRemove(UserIDEnum.CITY.ordinal(), id, twoDate.one);
+                                                }
+                                                case "sex" -> {
+                                                    if (twoDate.range()) users.removeId(id, UserIDEnum.SEX.ordinal(), twoDate.one, twoDate.two);
+                                                    else users.filterIdRemove(UserIDEnum.SEX.ordinal(), id, twoDate.one);
+                                                }
+                                                case "type" -> {
+                                                    if (twoDate.range()) users.removeId(id, UserIDEnum.TYPE.ordinal(), twoDate.one, twoDate.two);
+                                                    else users.filterIdRemove(UserIDEnum.TYPE.ordinal(), id, twoDate.one);
+                                                }
+                                                default -> {
+                                                    System.out.println("Error not filter in: " + General.input.strings.get(General.input.index + 1));
+                                                    return false;
+                                                }
+                                            } General.input.index += 2;
+                                        }
+                                    }
+                                    case "idGenerate" -> {
+                                        if (data instanceof Users users) {
+                                            ++General.input.index;
+                                            Input.GenerateAndLevel generateAndLevel = General.input.getGenerateAndLevel();
+                                            if (generateAndLevel == null) return false;
+
+                                            int id;
+                                            try {
+                                                id = Integer.parseInt(General.input.strings.get(General.input.index + 1));
+                                            } catch (NumberFormatException e) {
+                                                System.out.println("Error unconvert id: " + General.input.strings.get(General.input.index + 1));
+                                                return false;
+                                            }
+
+                                            switch (General.input.strings.get(General.input.index)) {
+                                                case "city" -> { users.removeIdGenerate(UserIDEnum.CITY.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
+                                                case "type" -> { users.removeIdGenerate(UserIDEnum.TYPE.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); }
+                                                case "sex" -> { { users.removeIdGenerate(UserIDEnum.SEX.ordinal(), id, generateAndLevel.generate(), generateAndLevel.level(), twoDate.one); } }
+                                                default -> {
+                                                    System.out.println(Colors.ANSI_RED + "Error is generate command: " + General.input.strings.get(General.input.index) + Colors.ANSI_RESET);
+                                                    return false;
+                                                }
+                                            } ++General.input.index;
+                                        } else {
+                                            System.out.println(Colors.ANSI_RED + "Error io element is not users" + Colors.ANSI_RESET);
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                            case "chain" -> {
+
+                            }
+                            case "general" -> {
+                                ++General.input.index;
+                                Boolean generate = General.input.getGenerate();
+                                if (generate == null) return false;
+
+                                if (data instanceof Users users) {
+                                    switch (General.input.strings.get(General.input.index)) {
+                                        case "friends" -> {
+                                            users.generalIds(GenerateIDsEnum.FRIENDS.ordinal(), UserIDsEnum.FRIENDS.ordinal(), generate, twoDate.one);
+                                        }
+                                        case "subscribers" -> {
+                                            users.generalIds(GenerateIDsEnum.SUBSCRIBERS.ordinal(), UserIDsEnum.SUBSCRIBERS.ordinal(), generate, twoDate.one);
+                                        }
+                                        case "groups" -> {
+                                            users.generalIds(GenerateIDsEnum.GROUPS.ordinal(), UserIDsEnum.GROUPS.ordinal(), generate, twoDate.one);
+                                            data = new Groups(users.data);
+                                            if (equals) {
+                                                map.put(name, data);
+                                            }
+                                        }
+                                        default -> {
+                                            System.out.println("Error not general command: " + General.input.strings.get(General.input.index));
+                                            return false;
+                                        }
+                                    }
+                                }
                             }
                             default -> {
-                                System.out.println("Error not general command: " + General.input.strings.get(General.input.index));
+                                System.out.println("Error not command io: " + General.input.strings.get(General.input.index));
                                 return false;
                             }
                         }
                     }
-                }
-                default -> {
-                    System.out.println("Error not command io: " + General.input.strings.get(General.input.index));
-                    return false;
                 }
             } ++General.input.index;
         } return true;

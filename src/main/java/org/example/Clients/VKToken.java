@@ -81,7 +81,6 @@ public class VKToken {
 
         if (buffer.has("error")) {
             JsonObject error = buffer.getAsJsonObject("error");
-            System.out.println(error.toString());
             throw new VkError(error.get("error_msg").getAsString(), error.get("error_code").getAsInt());
         } return new DB(date, buffer);
     }

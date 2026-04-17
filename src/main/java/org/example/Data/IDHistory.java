@@ -113,7 +113,7 @@ public class IDHistory {
             else if (date > buffer.date) begin = index + 1;
             else return index;
         }
-        return ((buffer.date > date) ? ((index == 0) ? -1 : index - 1) : index);
+        return ((buffer.date < date) ? ((index == 0) ? -1 : index - 1) : index);
     }
 
     public Node get(long date) {

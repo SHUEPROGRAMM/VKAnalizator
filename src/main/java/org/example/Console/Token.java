@@ -20,7 +20,8 @@ public class Token {
                 if (accessTokens == null) return false;
 
                 for (Input.AccessToken element : accessTokens)
-                    General.vkTokens.add(element.id(), element.accessToken());
+                    if (General.vkTokens.add(element.id(), element.accessToken()))
+                        System.out.println(Colors.ANSI_GREEN + "added: " + element.id() + ":" + element.accessToken() + Colors.ANSI_RESET);
             }
             case "info" -> {
                 System.out.println("Token's count: " + General.vkTokens.data.size());
@@ -28,13 +29,8 @@ public class Token {
                     System.out.println(Integer.toString(index) + "\t:" + General.vkTokens.data.get(index));
             }
             case "remove" -> {
-                ArrayList<Integer> indices = General.input.getIntegers();
-                if (indices == null) return false;
-                if (!Base.isAcceessTokenIndices(indices)) return false;
-
-                ArrayList<VKToken> vkTokens = new ArrayList<>();
-                for (int element : indices)
-                    vkTokens.add(General.vkTokens.data.get(element));
+                ArrayList<Integer> vkTokens = General.input.getIntegers();
+                if (vkTokens == null) return false;
                 General.vkTokens.remove(vkTokens);
             }
             case "clear" -> { General.vkTokens.clear(); }

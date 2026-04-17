@@ -136,13 +136,13 @@ public class DataAdd {
             if (userDB.iDsHistories == null) userDB.iDsHistories = new IDsHistory[UserIDsEnum.values().length];
             if (userDB.iDsHistories[UserIDsEnum.FRIENDS.ordinal()] == null) userDB.iDsHistories[UserIDsEnum.FRIENDS.ordinal()] = new IDsHistory();
             userDB.iDsHistories[UserIDsEnum.FRIENDS.ordinal()].update(data.date, array);
-        }
 
-        if (array != null) {
-            TreeSet<Integer> set = General.generateIds[GenerateIDsEnum.FRIENDS.ordinal()].computeIfAbsent(data.id, s -> new TreeSet<>());
-            for (int id : array) {
-                General.generateIds[GenerateIDsEnum.FRIENDS.ordinal()].computeIfAbsent(id, s -> new TreeSet<>()).add(data.id);
-                set.add(id);
+            if (array != null) {
+                TreeSet<Integer> set = General.generateIds[GenerateIDsEnum.FRIENDS.ordinal()].computeIfAbsent(data.id, s -> new TreeSet<>());
+                for (int id : array) {
+                    General.generateIds[GenerateIDsEnum.FRIENDS.ordinal()].computeIfAbsent(id, s -> new TreeSet<>()).add(data.id);
+                    set.add(id);
+                }
             }
         } return array;
     }

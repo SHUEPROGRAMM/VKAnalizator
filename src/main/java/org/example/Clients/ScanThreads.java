@@ -1,5 +1,6 @@
 package org.example.Clients;
 
+import org.example.Colors;
 import org.example.DataAdd;
 import org.example.General;
 import org.example.VKRequest.RequestsGetID;
@@ -12,6 +13,7 @@ public class ScanThreads {
         public final VKToken vkToken;
         public ArrayList<Integer> ids;
         public boolean error = false;
+        public boolean out = true;
 
         public void errorBlyad(int index) {
             ids = new ArrayList<>(ids.subList(index, ids.size()));
@@ -40,7 +42,7 @@ public class ScanThreads {
         @Override
         public void run() {
             for (int index = 0; index < ids.size(); ++index) {
-                if (index % 20 == 0) System.out.println("Scan friends: " + Integer.toString(index) + " in " + Integer.toString(ids.size()));
+                if (out && index % 20 == 0) System.out.println("Scan friends: " + Integer.toString(index) + " in " + Integer.toString(ids.size()));
                 try {
                     RequestsGetID buffer = vkToken.friendsGet(ids.get(index));
                     General.lock.lock0();
@@ -52,6 +54,7 @@ public class ScanThreads {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 } catch (VKToken.VkError e) {
+                    if (out) System.out.println(Colors.ANSI_RED + e.toString() + Colors.ANSI_RESET);
                     if (e.getErrorCode() == 9 || e.getErrorCode() == 6) {
                         errorBlyad(index);
                         return;

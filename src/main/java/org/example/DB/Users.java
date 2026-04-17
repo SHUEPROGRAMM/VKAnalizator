@@ -3,13 +3,11 @@ package org.example.DB;
 import org.example.Algorithm.ChainsUserIDGenerate;
 import org.example.Algorithm.Generate;
 import org.example.Colors;
-import org.example.Console.Base;
 import org.example.Console.Input;
 import org.example.Data.IDHistory;
 import org.example.Data.IDsHistory;
 import org.example.Data.OnlineHistory;
 import org.example.Enum.UserIDEnum;
-import org.example.Enum.UserIDsEnum;
 import org.example.General;
 import org.example.Utils;
 import org.example.VKData.UserDB;
@@ -1051,6 +1049,57 @@ public class Users extends IDsBase {
 
     public void removeOnline(boolean data, long one, long two) throws InterruptedException {
         this.data.removeAll(searchOnline(data, one, two));
+        if (this.data.isEmpty()) this.data = null;
+    }
+
+    private static class Probability extends Thread {
+        public final int id;
+        public final int indexIn;
+        public final int indexTo;
+        public final int percent;
+        public ArrayList<Integer> buffer;
+
+        public Probability(int id, int indexIn, int indexTo, int percent) {
+            this.id = id;
+            this.indexIn = indexIn;
+            this.indexTo = indexTo;
+            this.percent = percent;
+        }
+
+        @Override
+        public void run() { buffer = org.example.Algorithm.Probability.probabilityUserIds(id, indexIn, indexTo, percent); }
+    }
+
+    public ArrayList<Integer> probabilityIds(int indexIn, int indexTo, int percent, int thread) throws InterruptedException {
+        TreeSet<Integer> buffer = new TreeSet<>();
+        Utils.ThreadsElementsCount threadsElementsCount = new Utils.ThreadsElementsCount(this.data.size(), thread);
+        int index = 0;
+        General.lock.lock1();
+
+        while (!threadsElementsCount.done()) {
+            threadsElementsCount.next0();
+            Probability[] probabilities = new Probability[threadsElementsCount.size()];
+            threadsElementsCount.next1();
+
+            while (index < this.data.size()){
+                probabilities[index] = new Probability(this.data.get(index), indexIn, indexTo, percent);
+                ++index;
+            } for (Probability element : probabilities) element.start();
+
+            for (Probability element : probabilities) {
+                element.join();
+                if (element.buffer != null) buffer.addAll(element.buffer);
+            }
+        }
+
+        General.lock.unlock1();
+        return new ArrayList<>(buffer);
+    }
+
+    public void filterProbabilityIds(int indexIn, int indexTo, int percent, int thread) throws InterruptedException {
+        ArrayList<Integer> temp = this.data;
+        this.data = probabilityIds(indexIn, indexTo, percent, thread);
+        this.data.removeAll(temp);
         if (this.data.isEmpty()) this.data = null;
     }
 

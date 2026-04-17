@@ -225,17 +225,17 @@ public class Data {
         commands = new ArrayList<>();
 
     q:  while (input.strings.size() - input.index > 1) {
-            Command command;
+            Command command = null;
             switch (input.strings.get(input.index)) {
                 case ">" -> { ++input.index; command = new Command(input, type, data, false); }
-                case "=" -> { ++input.index; command = new Command(input, type, data, true); }
-                default -> { break q; }
-            }
-
-            if (command.copy && main.newValue) {
-                System.out.println(Colors.ANSI_RED + "Error ravenstvo command new value" + Colors.ANSI_RESET);
-                error = true;
-                return;
+                case "=" -> {
+                    if (!main.newValue) {
+                        System.out.println(Colors.ANSI_RED + "Error ravenstvo command new value" + Colors.ANSI_RESET);
+                        error = true;
+                        return;
+                    } command = new Command(input, type, data, true);
+                }
+                default -> { return; }
             }
 
             if (command.error) {

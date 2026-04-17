@@ -22,6 +22,11 @@ public class Base <T> {
         this.data = new ArrayList<>(elements);
     }
 
+    public void remove(TreeSet<T> elements) {
+        this.data.removeAll(elements);
+        if (this.data.isEmpty()) this.data = null;
+    }
+
     public void outConsole() throws InterruptedException {}
     public void outConsole(long date) throws InterruptedException {}
 }

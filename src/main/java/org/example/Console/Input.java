@@ -2,6 +2,8 @@ package org.example.Console;
 
 import org.example.Colors;
 import org.example.General;
+import org.example.IOStream;
+import org.example.Utils;
 
 import java.awt.*;
 import java.io.*;
@@ -14,6 +16,7 @@ public class Input {
     public record Names(String first, String last) {}
     public record AccessToken(int id, String accessToken) {}
     public record GenerateAndLevel(boolean generate, int level) {}
+    public record Probability(int percent, boolean generate) {}
 
     public static class TwoDate {
         public final long one, two;
@@ -40,6 +43,89 @@ public class Input {
 
         public boolean range() { return one != 0 && two != 0; }
         public boolean isDate() { return one != 0; }
+    }
+
+    private int _getPercent() {
+        if (strings.size() - index < 3 || !Utils.isInteger(strings.get(++index))) {
+            System.out.println(Colors.ANSI_RED + "Error not percent or not percent value" + Colors.ANSI_RESET);
+            return -1;
+        } return Integer.parseInt(strings.get(index));
+    }
+
+    public Probability getProbability() {
+        if (strings.size() - index > 1 && strings.get(index).charAt(0) == '-') {
+            if (strings.get(index).length() == 1) {
+                System.out.println(errorLengthArgument);
+                return null;
+            }
+
+            boolean generate = false;
+            int percent = 100;
+
+            while (strings.size() - index > 1 && strings.get(index).charAt(0) == '-') {
+                if (strings.get(index).charAt(1) == '-') {
+                    String str = strings.get(index).substring(2);
+                    switch (str) {
+                        case "generate" -> { generate = true; }
+                        case "percent" -> {
+                            percent = _getPercent();
+                            if (percent == -1) return null;
+                        }
+                        default -> {
+                            System.out.println(Colors.ANSI_RED + "Error not argument: " + str + Colors.ANSI_RESET);
+                            return null;
+                        }
+                    }
+                } else {
+                    for (char element : strings.get(index).substring(1).toCharArray()) {
+                        switch (element) {
+                            case 'g' -> { generate = true; }
+                            case 'p' -> {
+                                percent = _getPercent();
+                                if (percent == -1) return null;
+                            }
+                            default -> {
+                                System.out.println(Colors.ANSI_RED + "Error not key: " + element + Colors.ANSI_RESET);
+                                return null;
+                            }
+                        }
+                    }
+                } ++index;
+            }
+            return new Probability(percent, generate);
+        } return new Probability(100, false);
+    }
+
+    public static class ScanNode {
+        public final int type;
+        public ArrayList<Integer> tokens;
+        public final int rerty;
+        public final long rertyTime;
+        public final int level;
+
+        public ScanNode(int type, ArrayList<Integer> tokens, int rerty, long rertyTime, int level) {
+            this.type = type;
+            this.tokens = tokens;
+            this.rerty = rerty;
+            this.rertyTime = rertyTime;
+            this.level = level;
+        }
+
+        public ScanNode(DataInputStream dataInputStream) throws IOException {
+            this.type = dataInputStream.read();
+            this.tokens = IOStream.readIntArrayList(dataInputStream);
+            this.rerty = dataInputStream.readInt();
+            this.rertyTime = dataInputStream.readLong();
+            this.level = dataInputStream.readInt();
+        }
+
+        public void out(DataOutputStream dataOutputStream) throws IOException {
+            dataOutputStream.write(this.type);
+            IOStream.writeIntArrayList(this.tokens, dataOutputStream);
+            dataOutputStream.write(this.rerty);
+            dataOutputStream.writeLong(this.rertyTime);
+            dataOutputStream.writeInt(this.level);
+        }
     }
 
     public static final String errorLengthArgument = Colors.ANSI_RED + "Error length argument" + Colors.ANSI_RESET;
@@ -124,7 +210,6 @@ public class Input {
         ArrayList<AccessToken> buffer = new ArrayList<>();
         while (strings.size() - index > 1) {
             try {
-                System.out.println(strings.get(index));
                 int id = Integer.parseInt(strings.get(index));
                 buffer.add(new AccessToken(id, strings.get(index + 1)));
             } catch (NumberFormatException e) {
@@ -360,5 +445,136 @@ public class Input {
                 return null;
             }
         } return new TwoDate(0);
+    }
+
+
+
+    public ScanNode getScan() {
+        int rerty = 1;
+        long rertyTime = 60000;
+        ArrayList<Integer> tokens = null;
+        int level = 1;
+
+        if (strings.size() - index > 2) {
+            if (strings.get(index).charAt(0) == '-') {
+                if (strings.get(index).length() == 1) {
+                    System.out.println("Error not length argument -");
+                    return null;
+                }
+
+                if (strings.size() - index < 2) {
+                    System.out.println("Error not arguments element");
+                    return null;
+                }
+
+                if (strings.get(index).charAt(1) == '-') {
+                    ++index;
+                    switch (strings.get(index - 1).substring(2)) {
+                        case "rerty" -> {
+                            try {
+                                rerty = Integer.parseInt(strings.get(index));
+                            } catch (NumberFormatException e) {
+                                System.out.println("Error unconvert rertyCount: " + strings.get(index));
+                                return null;
+                            }
+                        }
+                        case "level" -> {
+                            try {
+                                level = Integer.parseInt(strings.get(index));
+                            } catch (NumberFormatException e) {
+                                System.out.println("Error unconvert level: " + strings.get(index));
+                                return null;
+                            }
+                        }
+                        case "rertyTime" -> {
+                            try {
+                                rertyTime = Long.parseLong(strings.get(index));
+                            } catch (NumberFormatException e) {
+                                System.out.println("Error unconvert rertyTime: " + strings.get(index));
+                                return null;
+                            }
+                        }
+                        case "tokens" -> {
+                            tokens = getIntegers();
+                            if (tokens == null) {
+                                System.out.println("Error not tokens ids");
+                                return null;
+                            } --index;
+                        }
+                        default -> {
+                            System.out.println("Error not argument: " + strings.get(index - 1).substring(2));
+                            return null;
+                        }
+                    }
+                } else {
+                    for (char element : strings.get(index).substring(1).toCharArray()) {
+                        if (strings.size() - index < 3) {
+                            System.out.println("Error not arguments element");
+                            return null;
+                        } ++index;
+                        switch (element) {
+                            case 'r' -> {
+                                try {
+                                    rerty = Integer.parseInt(strings.get(index));
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Error unconvert rertyCount: " + strings.get(index));
+                                    return null;
+                                }
+                            }
+                            case 't' -> {
+                                try {
+                                    rertyTime = Long.parseLong(strings.get(index));
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Error unconvert rertyTime: " + strings.get(index));
+                                    return null;
+                                }
+                            }
+                            case 'T' -> {
+                                tokens = getIntegers();
+                                if (tokens == null) {
+                                    System.out.println("Error not tokens ids");
+                                    return null;
+                                } --index;
+                            }
+                            case 'l' -> {
+                                try {
+                                    level = Integer.parseInt(strings.get(index));
+                                } catch (NumberFormatException e) {
+                                    System.out.println("Error uncovert level: " + strings.get(index));
+                                    return null;
+                                }
+                            }
+                        }
+                    }
+                } ++index;
+            }
+        }
+
+        int type = switch (strings.get(index)) {
+            case "friends" -> 0;
+            default -> -1;
+        };
+
+        if (type == -1) {
+            System.out.println("Error not scan type: " + strings.get(index));
+            return null;
+        } ++index;
+
+        if (rerty < 1) {
+            System.out.println("Error rerty < 1");
+            return null;
+        }
+
+        if (rertyTime < 200) {
+            System.out.println("Error rertyTime < 200 ms");
+            return null;
+        }
+
+        if (level < 1) {
+            System.out.println("Error level < 1");
+            return null;
+        }
+
+        return new ScanNode(type, tokens, rerty, rertyTime, level);
     }
 }

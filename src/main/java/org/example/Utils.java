@@ -149,4 +149,20 @@ public class Utils {
             System.out.print(array[a] + ", ");
         System.out.println(array[array.length - 1]);
     }
+
+    public static class ThreadsElementsCount {
+        public final int count, thread;
+        int begin = 0; int end = 0;
+
+        public ThreadsElementsCount(int count, int thread) {
+            this.count = count;
+            this.thread = thread;
+        }
+
+        public void next0() { this.end = Math.min(this.begin + this.thread, this.count); }
+        public void next1() { this.begin = end; }
+
+        public int size() { return this.end - this.begin; }
+        public boolean done() { return this.begin == count; }
+    }
 }
