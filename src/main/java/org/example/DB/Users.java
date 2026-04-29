@@ -2,6 +2,7 @@ package org.example.DB;
 
 import org.example.Algorithm.ChainsUserIDGenerate;
 import org.example.Algorithm.Generate;
+import org.example.Algorithm.Probability;
 import org.example.Colors;
 import org.example.Console.Input;
 import org.example.Data.IDHistory;
@@ -12,10 +13,7 @@ import org.example.General;
 import org.example.Utils;
 import org.example.VKData.UserDB;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Users extends IDsBase {
     public Users(ArrayList<Integer> data) {
@@ -906,7 +904,7 @@ public class Users extends IDsBase {
 
                 int time = userDB.idHistories[UserIDEnum.BDATE.ordinal()].data.getLast().id;
                 if (time > 0) time = -(time % 100 + ((time / 100) % 12));
-                if (time >= one && time <= two) buffer.add(userId);
+                if (time <= one && time >= two) buffer.add(userId);
             }
         } else {
             for (int userId : this.data) {
@@ -946,7 +944,7 @@ public class Users extends IDsBase {
 
                 int time = node.id;
                 if (time > 0) time = -(time % 100 + ((time / 100) % 12));
-                if (time >= one && time <= two) buffer.add(userId);
+                if (time <= one && time >= two) buffer.add(userId);
             }
         } else {
             for (int userId : this.data) {
@@ -990,7 +988,7 @@ public class Users extends IDsBase {
 
                     int time = node.id;
                     if (time > 0) time = -(time % 100 + ((time / 100) % 12));
-                    if (time >= one && time <= two){
+                    if (time <= one && time >= two){
                         buffer.add(userId);
                         break;
                     } ++index;
@@ -1052,22 +1050,88 @@ public class Users extends IDsBase {
         if (this.data.isEmpty()) this.data = null;
     }
 
-    private static class Probability extends Thread {
-        public final int id;
-        public final int indexIn;
-        public final int indexTo;
-        public final int percent;
-        public ArrayList<Integer> buffer;
 
-        public Probability(int id, int indexIn, int indexTo, int percent) {
-            this.id = id;
-            this.indexIn = indexIn;
-            this.indexTo = indexTo;
-            this.percent = percent;
+
+    private static class ProbabilityUsers extends ProbabilityMain {
+        public ProbabilityUsers(int id, int indexIn, int indexTo, int percent) {
+            super(id, indexIn, indexTo, percent);
         }
 
         @Override
         public void run() { buffer = org.example.Algorithm.Probability.probabilityUserIds(id, indexIn, indexTo, percent); }
+    }
+
+    private static class ProbabilityGenerate extends ProbabilityMain {
+        public ProbabilityGenerate(int id, int indexIn, int indexTo, int percent) {
+            super(id, indexIn, indexTo, percent);
+        }
+
+        @Override
+        public void run() { buffer = Probability.probabilityGenerate(id, indexIn, indexTo, percent); }
+    }
+
+    private static class ProbabilityGenerateFriendsDate extends ProbabilityMain {
+        public final long date;
+
+        public ProbabilityGenerateFriendsDate(int id, int indexIn, int indexTo, int percent, long date) {
+            super(id, indexIn, indexTo, percent);
+            this.date = date;
+        }
+
+        @Override
+        public void run() {
+            try {
+                this.buffer = Probability.probabilityGenerateFriends(id, date, percent);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static class ProbabilityGenerateFriendsTwoDate extends ProbabilityMain {
+        public final long one;
+        public final long two;
+
+        public ProbabilityGenerateFriendsTwoDate(int id, int indexIn, int indexTo, int percent, long one, long two) {
+            super(id, indexIn, indexTo, percent);
+            this.one = one;
+            this.two = two;
+        }
+
+        @Override
+        public void run() {
+            try {
+                this.buffer = Probability.probabilityGenerateFriends(id, one, two, percent);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static class ProbabilityIdsDate extends ProbabilityMain {
+        public final long date;
+
+        public ProbabilityIdsDate(int id, int indexIn, int indexTo, int percent, long date) {
+            super(id, indexIn, indexTo, percent);
+            this.date = date;
+        }
+
+        @Override
+        public void run() { this.buffer = Probability.probabilityUserIds(id, indexIn, indexTo, percent, date); }
+    }
+
+    private static class ProbabilityIdsTwoDate extends ProbabilityMain {
+        public final long one;
+        public final long two;
+
+        public ProbabilityIdsTwoDate(int id, int indexIn, int indexTo, int percent, long one, long two) {
+            super(id, indexIn, indexTo, percent);
+            this.one = one;
+            this.two = two;
+        }
+
+        @Override
+        public void run() { this.buffer = Probability.probabilityUserIds(id, indexIn, indexTo, percent, one, two); }
     }
 
     public ArrayList<Integer> probabilityIds(int indexIn, int indexTo, int percent, int thread) throws InterruptedException {
@@ -1078,15 +1142,93 @@ public class Users extends IDsBase {
 
         while (!threadsElementsCount.done()) {
             threadsElementsCount.next0();
-            Probability[] probabilities = new Probability[threadsElementsCount.size()];
+            ProbabilityUsers[] probabilities = new ProbabilityUsers[threadsElementsCount.size()];
             threadsElementsCount.next1();
 
             while (index < this.data.size()){
-                probabilities[index] = new Probability(this.data.get(index), indexIn, indexTo, percent);
+                probabilities[index] = new ProbabilityUsers(this.data.get(index), indexIn, indexTo, percent);
                 ++index;
-            } for (Probability element : probabilities) element.start();
+            } for (ProbabilityUsers element : probabilities) element.start();
 
-            for (Probability element : probabilities) {
+            for (ProbabilityUsers element : probabilities) {
+                element.join();
+                if (element.buffer != null) buffer.addAll(element.buffer);
+            }
+        }
+
+        General.lock.unlock1();
+        return new ArrayList<>(buffer);
+    }
+
+    public ArrayList<Integer> probabilityGenerate(int indexIn, int indexTo, int percent, int thread) throws InterruptedException {
+        TreeSet<Integer> buffer = new TreeSet<>();
+        Utils.ThreadsElementsCount threadsElementsCount = new Utils.ThreadsElementsCount(this.data.size(), thread);
+        int index = 0;
+        General.lock.lock1();
+
+        while (!threadsElementsCount.done()) {
+            threadsElementsCount.next0();
+            ProbabilityGenerate[] probabilityGenerates = new ProbabilityGenerate[threadsElementsCount.size()];
+            threadsElementsCount.next1();
+
+            while (index < this.data.size()){
+                probabilityGenerates[index] = new ProbabilityGenerate(this.data.get(index), indexIn, indexTo, percent);
+                ++index;
+            } for (ProbabilityGenerate element : probabilityGenerates) element.start();
+
+            for (ProbabilityGenerate element : probabilityGenerates) {
+                element.join();
+                if (element.buffer != null) buffer.addAll(element.buffer);
+            }
+        }
+
+        General.lock.unlock1();
+        return new ArrayList<>(buffer);
+    }
+
+    public ArrayList<Integer> probabilityFriendsGenerateDate(int percent, int thread, long date) throws InterruptedException {
+        TreeSet<Integer> buffer = new TreeSet<>();
+        Utils.ThreadsElementsCount threadsElementsCount = new Utils.ThreadsElementsCount(this.data.size(), thread);
+        int index = 0;
+        General.lock.lock1();
+
+        while (!threadsElementsCount.done()) {
+            threadsElementsCount.next0();
+            org.example.DB.Users.ProbabilityGenerateFriendsDate[] probabilityGenerateFriendsDates = new org.example.DB.Users.ProbabilityGenerateFriendsDate[threadsElementsCount.size()];
+            threadsElementsCount.next1();
+
+            while (index < this.data.size()){
+                probabilityGenerateFriendsDates[index] = new org.example.DB.Users.ProbabilityGenerateFriendsDate(this.data.get(index), 0, 0, percent, date);
+                ++index;
+            } for (org.example.DB.Users.ProbabilityGenerateFriendsDate element : probabilityGenerateFriendsDates) element.start();
+
+            for (org.example.DB.Users.ProbabilityGenerateFriendsDate element : probabilityGenerateFriendsDates) {
+                element.join();
+                if (element.buffer != null) buffer.addAll(element.buffer);
+            }
+        }
+
+        General.lock.unlock1();
+        return new ArrayList<>(buffer);
+    }
+
+    public ArrayList<Integer> probabilityFriendsGenerateTwoDate(int percent, int thread, long one, long two) throws InterruptedException {
+        TreeSet<Integer> buffer = new TreeSet<>();
+        Utils.ThreadsElementsCount threadsElementsCount = new Utils.ThreadsElementsCount(this.data.size(), thread);
+        int index = 0;
+        General.lock.lock1();
+
+        while (!threadsElementsCount.done()) {
+            threadsElementsCount.next0();
+            ProbabilityGenerateFriendsTwoDate[] probabilityGenerateFriendsDates = new ProbabilityGenerateFriendsTwoDate[threadsElementsCount.size()];
+            threadsElementsCount.next1();
+
+            while (index < this.data.size()){
+                probabilityGenerateFriendsDates[index] = new ProbabilityGenerateFriendsTwoDate(this.data.get(index), 0, 0, percent, one, two);
+                ++index;
+            } for (ProbabilityGenerateFriendsTwoDate element : probabilityGenerateFriendsDates) element.start();
+
+            for (ProbabilityGenerateFriendsTwoDate element : probabilityGenerateFriendsDates) {
                 element.join();
                 if (element.buffer != null) buffer.addAll(element.buffer);
             }
@@ -1101,6 +1243,143 @@ public class Users extends IDsBase {
         this.data = probabilityIds(indexIn, indexTo, percent, thread);
         this.data.removeAll(temp);
         if (this.data.isEmpty()) this.data = null;
+    }
+
+    public void filterProbabilityGenerate(int indexIn, int indexTo, int percent, int thread) throws InterruptedException {
+        ArrayList<Integer> temp = this.data;
+        this.data = probabilityGenerate(indexIn, indexTo, percent, thread);
+        this.data.removeAll(temp);
+        if (this.data.isEmpty()) this.data = null;
+    }
+
+    public void filterProbabilityFriendsDate(int percent, int thread, long date) throws InterruptedException {
+        ArrayList<Integer> temp = this.data;
+        this.data = probabilityFriendsGenerateDate(percent, thread, date);
+        this.data.removeAll(temp);
+        if (this.data.isEmpty()) this.data = null;
+    }
+
+    public void filterProbabilityFrinedsTwoDate(int perceent, int thread, long one, long two) throws InterruptedException {
+        ArrayList<Integer> temp = this.data;
+        this.data = probabilityFriendsGenerateTwoDate(perceent, thread, one, two);
+        this.data.removeAll(temp);
+        if (this.data.isEmpty()) this.data = null;
+    }
+
+    public void contain(int type, ArrayList<Integer> ids) {
+        switch (type) {
+            case 0, 1 -> {
+                for (int id : this.data) {
+                    UserDB userDB = General.users.get(id);
+                    if (userDB == null || userDB.idHistories == null || userDB.iDsHistories[type] == null || userDB.iDsHistories[type].last.data == null) continue;
+                    System.out.println(Integer.toString(id) + ":" + userDB);
+
+                    ArrayList<Integer> contain = new ArrayList<>();
+                    ArrayList<Integer> nonContain = new ArrayList<>();
+
+                    for (int element : ids) {
+                        if (Arrays.binarySearch(userDB.iDsHistories[type].last.data, element) > -1)
+                            contain.add(element);
+                        else nonContain.add(element);
+                    }
+
+                    if (!contain.isEmpty()) {
+                        System.out.println(Colors.ANSI_CYAN + "Contain: " + Integer.toString(contain.size()) + Colors.ANSI_RESET);
+                        for (int element : contain)
+                            System.out.println("\t" + Integer.toString(element) + ":" + General.users.get(element));
+                    }
+
+                    if (!nonContain.isEmpty()) {
+                        System.out.println(Colors.ANSI_CYAN + "Non contain: " + Integer.toString(nonContain.size()) + Colors.ANSI_RESET);
+                        for (int element : nonContain)
+                            System.out.println("\t" + Integer.toString(element) + ":" + General.users.get(element));
+                    }
+                }
+            }
+            case 2 -> {
+
+            }
+        }
+    }
+
+    public void contain(int type, ArrayList<Integer> ids, long date) {
+        switch (type) {
+            case 0, 1 -> {
+                for (int id : this.data) {
+                    UserDB userDB = General.users.get(id);
+                    if (userDB == null || userDB.idHistories == null || userDB.iDsHistories[type] == null || userDB.iDsHistories[type].last.data == null) continue;
+                    System.out.println(Integer.toString(id) + ":" + userDB);
+
+                    ArrayList<Integer> contain = new ArrayList<>();
+                    ArrayList<Integer> nonContain = new ArrayList<>();
+
+                    for (int element : ids) {
+                        if (userDB.iDsHistories[type].contain(id, date))
+                            contain.add(element);
+                        else nonContain.add(element);
+                    }
+
+                    if (!contain.isEmpty()) {
+                        System.out.println(Colors.ANSI_CYAN + "Contain: " + Integer.toString(contain.size()) + Colors.ANSI_RESET);
+                        for (int element : contain) {
+                            UserDB user = General.users.get(element);
+                            System.out.println("\t" + Integer.toString(element) + ":" + ((user == null) ? "null" : user.toString(date)));
+                        }
+                    }
+
+                    if (!nonContain.isEmpty()) {
+                        System.out.println(Colors.ANSI_CYAN + "Non contain: " + Integer.toString(nonContain.size()) + Colors.ANSI_RESET);
+                        for (int element : contain) {
+                            UserDB user = General.users.get(element);
+                            System.out.println("\t" + Integer.toString(element) + ":" + ((user == null) ? "null" : user.toString(date)));
+                        }
+                    }
+                }
+            }
+            case 2 -> {
+
+            }
+        }
+    }
+
+    public void contain(int type, ArrayList<Integer> ids, long one, long two) {
+        switch (type) {
+            case 0, 1 -> {
+                for (int id : this.data) {
+                    UserDB userDB = General.users.get(id);
+                    if (userDB == null || userDB.idHistories == null || userDB.iDsHistories[type] == null || userDB.iDsHistories[type].last.data == null) continue;
+                    System.out.println(Integer.toString(id) + ":" + userDB);
+
+                    ArrayList<Integer> contain = new ArrayList<>();
+                    ArrayList<Integer> nonContain = new ArrayList<>();
+
+                    for (int element : ids) {
+                        if (userDB.iDsHistories[type].contain(id, one, two))
+                            contain.add(element);
+                        else nonContain.add(element);
+                    }
+
+                    if (!contain.isEmpty()) {
+                        System.out.println(Colors.ANSI_CYAN + "Contain: " + Integer.toString(contain.size()) + Colors.ANSI_RESET);
+                        for (int element : contain) {
+                            UserDB user = General.users.get(element);
+                            System.out.println("\t" + Integer.toString(element) + ":" + ((user == null) ? "null" : user.toString(one)));
+                        }
+                    }
+
+                    if (!nonContain.isEmpty()) {
+                        System.out.println(Colors.ANSI_CYAN + "Non contain: " + Integer.toString(nonContain.size()) + Colors.ANSI_RESET);
+                        for (int element : contain) {
+                            UserDB user = General.users.get(element);
+                            System.out.println("\t" + Integer.toString(element) + ":" + ((user == null) ? "null" : user.toString(one)));
+                        }
+                    }
+                }
+            }
+            case 2 -> {
+
+            }
+        }
     }
 
     @Override

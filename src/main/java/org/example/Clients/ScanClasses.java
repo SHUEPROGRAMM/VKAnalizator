@@ -154,23 +154,27 @@ public class ScanClasses {
             ArrayList<Integer> remove = new ArrayList<>();
             data.nonScan.clear();
 
-            synchronized (General.vkTokens) {
-                for (int index = 0; index < friendsGetThreads.length; ++index) {
-                    VKToken vkToken = General.vkTokens.data.get(vkTokens.get(index));
-                    if (vkToken != null) {
-                        friendsGetThreads[index] = new ScanThreads.FriendsGetThread(vkToken, buffer[index]);
-                        friendsGetThreads[index].start();
-                    } else friendsGetThreads[index].error = true;
+            for (int index = 0; index < friendsGetThreads.length; ++index) {
+                VKToken vkToken;
+                synchronized (General.vkTokens) { vkToken = General.vkTokens.data.get(vkTokens.get(index)); }
+
+                if (vkToken != null) {
+                    friendsGetThreads[index] = new ScanThreads.FriendsGetThread(vkToken, buffer[index]);
+                    friendsGetThreads[index].start();
+                } else {
+                    remove.add(vkTokens.get(index));
+                    data.nonScan.addAll(buffer[index]);
                 }
             }
 
-
             for (ScanThreads.FriendsGetThread element : friendsGetThreads) {
-                element.join();
-                if (element.error) {
-                    data.nonScan.addAll(element.ids);
-                    remove.add(element.vkToken.id);
-                } data.newScan.addAll(element.newScan);
+                if (element != null) {
+                    element.join();
+                    if (element.error) {
+                        data.nonScan.addAll(element.ids);
+                        remove.add(element.vkToken.id);
+                    } data.newScan.addAll(element.newScan);
+                }
             } removeVKTokens(remove);
         }
     }

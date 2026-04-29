@@ -22,6 +22,7 @@ public class Main {
                     case "client" -> { if (!Client.run()) continue q; }
                     case "server" -> { if (!Server.run()) continue q; }
                     case "about" -> {
+                        System.out.println("VKAnalizator v0.7-alpha\nby Zaykov A. S.");
                         ++General.input.index;
                     }
                     case "exit" -> {

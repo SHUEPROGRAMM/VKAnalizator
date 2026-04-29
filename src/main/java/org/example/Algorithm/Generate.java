@@ -11,8 +11,7 @@ import java.util.Arrays;
 import java.util.TreeSet;
 
 public class Generate {
-    public static TreeSet<Integer> getGenerateUserFriends(int id, boolean lock) throws InterruptedException {
-        if (lock) General.lock.lock1();
+    public static TreeSet<Integer> getGenerateUserFriends(int id) throws InterruptedException {
         TreeSet<Integer> set = General.generateIds[GenerateIDsEnum.FRIENDS.ordinal()].get(id);
         TreeSet<Integer> buffer = new TreeSet<>();
 
@@ -22,27 +21,35 @@ public class Generate {
                 buffer.add(element);
         }
 
-        if (lock) General.lock.unlock1();
         if (buffer.isEmpty()) return null;
         return buffer;
     }
 
     public static TreeSet<Integer> getGenerateUserIds(int id, int indexGenerate, int index, long date) throws InterruptedException {
-        General.lock.lock1();
         TreeSet<Integer> set = General.generateIds[indexGenerate].get(id);
+        if (set == null) return null;
         TreeSet<Integer> buffer = new TreeSet<>();
 
         for (int element : set) {
             UserDB userDB = General.users.get(element);
             if (userDB == null || userDB.iDsHistories == null || userDB.iDsHistories[index] == null) continue;
-            TreeSet<Integer> temp = userDB.iDsHistories[index].get(date);
-            if (temp == null) continue;
-            if (temp.contains(id)) buffer.add(element);
+            if (userDB.iDsHistories[index].contain(id, date)) buffer.add(element);
         }
 
-        General.lock.unlock1();
         if (buffer.isEmpty()) return null;
         return buffer;
+    }
+
+    public static TreeSet<Integer> getGenerateUserIds(int id, int indexGenerate, int index, long one, long two) {
+        TreeSet<Integer> set = General.generateIds[indexGenerate].get(id);
+        if (set == null) return null;
+        TreeSet<Integer> buffer = new TreeSet<>();
+
+        for (int element : set) {
+            UserDB userDB = General.users.get(element);
+            if (userDB == null || userDB.iDsHistories == null || userDB.iDsHistories[index] == null) continue;
+            if (userDB.iDsHistories[index].contain(id, one, two)) buffer.add(element);
+        } return (buffer.isEmpty()) ? null : buffer;
     }
 
     public TreeSet<Integer> getGeneralGenerate(int indexGenerate, ArrayList<Integer> ids) throws InterruptedException {

@@ -310,6 +310,69 @@ public class Other {
                         }
                     }
                 }
+                case "contain" -> {
+                    Boolean generate = General.input.getGenerate();
+                    if (generate == null) return false;
+
+                    if (General.input.strings.size() - General.input.index < 2) {
+                        System.out.println(Colors.ANSI_RED + "Error not contain argument" + Colors.ANSI_RESET);
+                        return false;
+                    }
+
+                    switch (data) {
+                        case Users users -> {
+                            int type = switch (General.input.strings.get(++General.input.index)) {
+                                case "friends" -> 0;
+                                case "subscribers" -> 1;
+                                case "groups" -> 2;
+                                default -> -1;
+                            };
+
+                            if (type == -1) {
+                                System.out.println(Colors.ANSI_RED + "Error not contain argument: " + General.input.strings.get(General.input.index) + Colors.ANSI_RESET);
+                                return false;
+                            }
+
+                            if (General.input.strings.size() - General.input.index < 2) {
+                                System.out.println(Colors.ANSI_RED + "Error not contain data" + Colors.ANSI_RESET);
+                                return false;
+                            } ++General.input.index;
+
+                            ArrayList<Integer> ids;
+                            if (type != 2) {
+                                if (Utils.isInteger(General.input.strings.get(General.input.index))) {
+                                    ids = General.input.getIntegers();
+                                    if (ids == null) return false;
+                                } else {
+                                    Node node = getBase(false);
+                                    if (node == null || !(node.data instanceof Users)) {
+                                        System.out.println(Colors.ANSI_RED + "Error contain data is empty or data is not users" + Colors.ANSI_RESET);
+                                        return false;
+                                    } ids = node.data.data;
+                                }
+
+
+                                if (generate) {
+                                    //Доделать
+                                } else {
+                                    if (twoDate.isDate()) {
+                                        if (twoDate.range()) users.contain(type, ids, twoDate.one, twoDate.two);
+                                        else users.contain(type, ids, twoDate.one);
+                                    } else users.contain(type, ids);
+                                }
+                            } else {
+                                //Доделать
+                            }
+                        }
+                        case Groups groups -> {
+
+                        }
+                        default -> {
+                            System.out.println(Colors.ANSI_RED + "Error not contain in chain" + Colors.ANSI_RESET);
+                            return false;
+                        }
+                    }
+                }
                 default -> {
                     if (!equals && valueType != 2) {
                         if (!backCopy) {
@@ -404,9 +467,25 @@ public class Other {
 
                                     if (General.input.strings.size() - General.input.index > 1) {
                                         switch (General.input.strings.get(General.input.index)) {
-                                            case "friends" -> { users.filterProbabilityIds(GenerateIDsEnum.FRIENDS.ordinal(), GenerateIDsEnum.FRIENDS.ordinal(), probability.percent(), General.threadCount); }
-                                            case "groups" -> {  }
-                                            case "subscribers" -> {  }
+                                            case "friends" -> {
+                                                if (probability.generate()) {
+                                                    if (twoDate.isDate()) {
+                                                        if (twoDate.range()) users.probabilityFriendsGenerateTwoDate(probability.percent(), General.threadCount, twoDate.one, twoDate.two);
+                                                        else users.probabilityFriendsGenerateDate(probability.percent(), General.threadCount, twoDate.one);
+                                                    } else users.filterProbabilityGenerate(GenerateIDsEnum.FRIENDS.ordinal(), GenerateIDsEnum.FRIENDS.ordinal(), probability.percent(), General.threadCount);
+                                                } else {
+                                                    if (twoDate.isDate()) {
+                                                        if (twoDate.range()) users.filterProbabilityFrinedsTwoDate(probability.percent(), General.threadCount, twoDate.one, twoDate.two);
+                                                        else users.filterProbabilityFriendsDate(probability.percent(), General.threadCount, twoDate.one);
+                                                    } else users.filterProbabilityIds(GenerateIDsEnum.FRIENDS.ordinal(), GenerateIDsEnum.FRIENDS.ordinal(), probability.percent(), General.threadCount);
+                                                }
+                                            }
+                                            case "subscribers" -> {
+
+                                            }
+                                            case "groups" -> {
+
+                                            }
                                             default -> {
                                                 System.out.println(Colors.ANSI_RED + "Error not probability argument: " + General.input.strings.get(General.input.index) + Colors.ANSI_RESET);
                                                 return false;
@@ -457,7 +536,7 @@ public class Other {
                                     case "bdate" -> {
                                         if (data instanceof Users users) {
                                             if (General.input.strings.get(++General.input.index).equals("range")) {
-                                                if (General.input.strings.size() - General.input.index > 3) {
+                                                if (General.input.strings.size() - General.input.index > 2) {
                                                     if (Utils.isBDate(General.input.strings.get(++General.input.index)) && Utils.isBDate(General.input.strings.get(General.input.index + 1))) {
                                                         int one = Utils.addBDate(General.input.strings.get(General.input.index));
                                                         int two = Utils.addBDate(General.input.strings.get(++General.input.index));
@@ -622,7 +701,7 @@ public class Other {
                                     case "bdate" -> {
                                         if (data instanceof Users users) {
                                             if (General.input.strings.get(++General.input.index).equals("range")) {
-                                                if (General.input.strings.size() - General.input.index > 3) {
+                                                if (General.input.strings.size() - General.input.index > 2) {
                                                     if (Utils.isBDate(General.input.strings.get(++General.input.index)) && Utils.isBDate(General.input.strings.get(General.input.index + 1))) {
                                                         int one = Utils.addBDate(General.input.strings.get(General.input.index));
                                                         int two = Utils.addBDate(General.input.strings.get(++General.input.index));

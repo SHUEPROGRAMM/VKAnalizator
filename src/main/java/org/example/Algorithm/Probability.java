@@ -93,6 +93,18 @@ public class Probability {
         } return get(map, tempIn.size(), percent);
     }
 
+    public static ArrayList<Integer> probabilityGenerateFriends(int id, long one, long two, int percent) throws InterruptedException {
+        TreeSet<Integer> tempIn = Generate.getGenerateUserIds(id, GenerateIDsEnum.FRIENDS.ordinal(), UserIDsEnum.FRIENDS.ordinal(), one, two);
+        if (tempIn == null) return null;
+        TreeMap<Integer, Integer> map = new TreeMap<>();
+
+        for (int element : tempIn) {
+            TreeSet<Integer> tempTo = Generate.getGenerateUserIds(element, GenerateIDsEnum.FRIENDS.ordinal(), UserIDsEnum.FRIENDS.ordinal(), one, two);
+            if (tempTo == null) continue;
+            for (int elem : tempTo) map.put(elem, map.getOrDefault(elem, 0) + 1);
+        } return get(map, tempIn.size(), percent);
+    }
+
     public static ArrayList<Integer> probabilityGenerateSubscribers(int id, long date, int percent) throws InterruptedException {
         TreeSet<Integer> tempIn = Generate.getGenerateUserIds(id, GenerateIDsEnum.FRIENDS.ordinal(), UserIDsEnum.FRIENDS.ordinal(), date);
         if (tempIn == null) return null;

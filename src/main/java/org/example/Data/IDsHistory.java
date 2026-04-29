@@ -470,14 +470,14 @@ public class IDsHistory {
         if (last.date >= date) return (last.data != null && Arrays.binarySearch(last.data, id) > -1);
         if (added.getFirst().date < date) return false;
 
-        boolean buffer = false;
         if (deleted == null) {
             for (Node element : added) {
-                if (element.date > date) return buffer;
+                if (element.date > date) return false;
                 if (element.data == null) continue;
-                if (Arrays.binarySearch(element.data, id) > -1) buffer = true;
-            }
+                if (Arrays.binarySearch(element.data, id) > -1) return true;
+            } return false;
         } else {
+            boolean buffer = false;
             Iterator<Node> addedIterator = added.iterator();
             Iterator<Node> deletedIterator = deleted.iterator();
             Node added = addedIterator.next();
@@ -511,6 +511,59 @@ public class IDsHistory {
             while (deleted != null) {
                 if (deleted.date > date) return buffer;
                 if (Arrays.binarySearch(deleted.data, id) > -1) buffer = false;
+                deleted = (deletedIterator.hasNext()) ? deletedIterator.next() : null;
+            } return buffer;
+        }
+    }
+
+    public boolean contain(int id, long one, long two) {
+        if (last.date >= one) return (last.data != null && Arrays.binarySearch(last.data, id) > -1);
+        if (added.getFirst().date < one) return false;
+
+        boolean buffer = false;
+        if (deleted == null) {
+            for (Node element : added) {
+                if (element.date > two) return buffer;
+                if (element.data != null && Arrays.binarySearch(element.data, id) > -1) buffer = true;
+                if (buffer && one < element.date && element.date < two) return true;
+            }
+        } else {
+            Iterator<Node> addedIterator = added.iterator();
+            Iterator<Node> deletedIterator = deleted.iterator();
+            Node added = addedIterator.next();
+            Node deleted = deletedIterator.next();
+
+            while (added != null && deleted != null) {
+                if (added.date < deleted.date) {
+                    if (added.date > two) return buffer;
+                    if (added.data != null && Arrays.binarySearch(added.data, id) > -1) buffer = true;
+                    if (buffer && one < added.date && added.date < two) return true;
+                    added = (addedIterator.hasNext()) ? addedIterator.next() : null;
+                } else if (added.date > deleted.date) {
+                    if (deleted.date > two) return buffer;
+                    if (Arrays.binarySearch(deleted.data, id) > -1 && deleted.date < one) buffer = false;
+                    deleted = (deletedIterator.hasNext()) ? deletedIterator.next() : null;
+                } else {
+                    if (added.date > two) return buffer;
+                    if (added.data != null && Arrays.binarySearch(added.data, id) > -1) buffer = true;
+                    if (buffer && one < added.date && added.date < two) return true;
+                    if (Arrays.binarySearch(deleted.data, id) > -1 && deleted.date < one) buffer = false;
+
+                    added = (addedIterator.hasNext()) ? addedIterator.next() : null;
+                    deleted = (deletedIterator.hasNext()) ? deletedIterator.next() : null;
+                }
+            }
+
+            while (added != null) {
+                if (added.date > two) return buffer;
+                if (added.data != null && Arrays.binarySearch(added.data, id) > -1) buffer = true;
+                if (buffer && one < added.date && added.date < two) return true;
+                added = (addedIterator.hasNext()) ? addedIterator.next() : null;
+            }
+
+            while (deleted != null) {
+                if (deleted.date > two) return buffer;
+                if (Arrays.binarySearch(deleted.data, id) > -1 && deleted.date < one) buffer = false;
                 deleted = (deletedIterator.hasNext()) ? deletedIterator.next() : null;
             }
         } return buffer;

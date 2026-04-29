@@ -27,6 +27,21 @@ public class Base <T> {
         if (this.data.isEmpty()) this.data = null;
     }
 
+    static class ProbabilityMain extends Thread {
+        public final int id;
+        public final int indexIn;
+        public final int indexTo;
+        public final int percent;
+        public ArrayList<Integer> buffer;
+
+        public ProbabilityMain(int id, int indexIn, int indexTo, int percent) {
+            this.id = id;
+            this.indexIn = indexIn;
+            this.indexTo = indexTo;
+            this.percent = percent;
+        }
+    }
+
     public void outConsole() throws InterruptedException {}
     public void outConsole(long date) throws InterruptedException {}
 }

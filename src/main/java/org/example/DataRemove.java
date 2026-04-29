@@ -95,7 +95,7 @@ public class DataRemove {
                 try {
                     TreeSet<Integer> generate = General.generateIds[GenerateIDsEnum.FRIENDS.ordinal()].get(userId);
                     if (generate == null) continue;
-                    TreeSet<Integer> temp = Generate.getGenerateUserFriends(userId, false);
+                    TreeSet<Integer> temp = Generate.getGenerateUserFriends(userId);
                     ArrayList<Integer> delete = new ArrayList<>(generate);
                     delete.removeAll(temp);
 
